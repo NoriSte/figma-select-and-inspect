@@ -1,0 +1,15 @@
+{
+  "api": "1.0.0",
+  "editorType": [
+    "figma"
+  ],
+  "id": "select-and-inspect",
+  "name": "Select and Inspect",
+  "main": "build/main.js",
+  "ui": "build/ui.js",
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  }
+}
