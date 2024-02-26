@@ -1,17 +1,17 @@
-# Figma Select and Inspect
+# 🚧 Figma Select and Inspect
 
-TODO:
+More info soon
 
-![Plugin's logo reporting "From Figma prototypes to XState’s machine config"](./assets/hero.jpg "Select and Inspect")
+<!-- ![Plugin's logo reporting "From Figma prototypes to XState’s machine config"](./assets/hero.jpg "Select and Inspect") -->
 
-## Why?
+<!-- ## Why?
 
 TODO:
 
 
 ## FAQ
 
-TODO:
+TODO: -->
 
 
 ### Install the plugin
