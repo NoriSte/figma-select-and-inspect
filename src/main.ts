@@ -1,4 +1,5 @@
 import { on, showUI } from '@create-figma-plugin/utilities'
+import type { LogOptions, UiOptions } from './types'
 
 const uiOptions = { width: 480, height: 240 } as const
 
@@ -7,25 +8,35 @@ const uiOptions = { width: 480, height: 240 } as const
 // - log on ui change
 // - log on open
 // - enable/disable
+// - relog current selection
+// - show diff?
+// - store config
 
-function logElements({
-  logHint,
-  elements,
-  alsoStringify,
-  expressionsToEvaluate,
-}: {
-  elements: unknown[]
-  logHint: boolean
-  alsoStringify: boolean
-  expressionsToEvaluate: string
-}) {
-  for (const element of elements) {
-    logElement({
-      logHint,
-      element,
-      alsoStringify,
-      expressionsToEvaluate,
-    })
+const defaultUiOptions: UiOptions = {
+  enabled: true,
+  expandedUi: true,
+  expressionsToEvaluate: '',
+  hideExpressionErrors: false,
+  altoStringifyEvaluatedExpressions: false,
+  formatStringifiedEvaluatedExpressions: false,
+}
+const defaultConfiguration: LogOptions = {
+  enabled: true,
+  expressionsToEvaluate: '',
+  hideExpressionErrors: false,
+  altoStringifyEvaluatedExpressions: false,
+  formatStringifiedEvaluatedExpressions: false,
+}
+const currentConfiguration: LogOptions = {
+  ...defaultConfiguration,
+}
+
+function processItems(items: readonly unknown[], logOptions: LogOptions) {
+  for (const item of items) {
+    processItem(
+      item,
+      logOptions,
+    )
   }
 }
 
@@ -35,61 +46,76 @@ function evaluateStringOnObject(obj, str) {
   return new Function('obj', `return obj.${str}`)(obj)
 }
 
-function logElement({
-  // logHint,
-  element,
-  alsoStringify,
-  expressionsToEvaluate,
-}: {
-  element: unknown
-  logHint: boolean
-  alsoStringify: boolean
-  expressionsToEvaluate: string
-}) {
-  const expressions = expressionsToEvaluate.split(',')
+function processItem(item: unknown, logOptions: LogOptions) {
+  console.log(item)
 
-  for (const expression of expressions) {
-    let value
-    let stringifiedValue = ''
+  const expressions = logOptions.expressionsToEvaluate.split(',')
 
+  for (const expression of expressions)
+    {
+      const trimmedExpression = expression.trim()
+      if(expression === '') continue
+      processExpression(item, trimmedExpression, logOptions)}
+}
+
+function processExpression(
+  item: unknown,
+  expression: string,
+  logOptions: LogOptions,
+) {
+  const { altoStringifyEvaluatedExpressions, hideExpressionErrors, formatStringifiedEvaluatedExpressions } = logOptions
+  let value
+  let stringifiedValue = ''
+  let errored = false
+
+  try {
+    value = evaluateStringOnObject(item, expression)
+    logExpression(expression, value)
+  }
+  catch (e) {
+    errored = true
+    if (!hideExpressionErrors)
+      logExpressionError(expression, stringifyError(e))
+  }
+
+  if (altoStringifyEvaluatedExpressions && !errored) {
     try {
-      value = evaluateStringOnObject(element, expression)
-      if (alsoStringify)
-        stringifiedValue = JSON.stringify(value)
-
-        logExpression(expression, value)
-      if (stringifiedValue)
-        logExpression(`${expression}(stringified):`, stringifiedValue)
+      stringifiedValue = formatStringifiedEvaluatedExpressions ? JSON.stringify(value, null, 2) : JSON.stringify(value)
+      logExpression(`${expression} (stringified):`, stringifiedValue)
     }
     catch (e) {
-      logExpressionError(expression, e instanceof Error ? e.message : `${e}`)
+      logExpressionError(`${expression} (stringified):`, stringifyError(e))
     }
-
   }
 }
 
-function logCurrentSelection() {
-  logElements({
-    logHint: false,
-    alsoStringify: true,
-    // @ts-expect-error TODO:
-    elements: figma.currentPage.selection,
-    expressionsToEvaluate: 'id,name,reactions,reactionssss[0],reactions[0]',
-  })
+function processCurrentSelection() {
+  processItems(
+    figma.currentPage.selection,
+    currentConfiguration,
+  )
 }
 
 function createSelectAndInspect() {
   function onSelectionChange() {
+    if (!currentConfiguration.enabled)
+      return
     signedLog('Selection changed')
-    logCurrentSelection()
+    processCurrentSelection()
+  }
+
+  function onConfigurationChange() {
+    signedLog('Configuration changed')
+    processCurrentSelection()
   }
 
   function start() {
     signedLog('Plugin opened')
-    showUI(uiOptions, { generatedXStateConfig: undefined })
+    showUI(uiOptions, { uiOptions: defaultUiOptions })
     figma.on('selectionchange', onSelectionChange)
-    logCurrentSelection()
+    processCurrentSelection()
   }
+
   function cleanup() {
     figma.off('selectionchange', onSelectionChange)
   }
@@ -97,6 +123,7 @@ function createSelectAndInspect() {
   return {
     start,
     cleanup,
+    onConfigurationChange,
   }
 }
 
@@ -105,7 +132,34 @@ export default function main() {
   selectAndInspect.start()
 
   // UI EVENTS
-  // on('REGENERATE', selectAndInspect.log)
+  on('enabledChanged', (value: boolean) => {
+    currentConfiguration.enabled = value
+    if (currentConfiguration.enabled)
+      selectAndInspect.onConfigurationChange()
+  })
+  on('resetToDefaultUiOptions', () => {
+    currentConfiguration.enabled = defaultConfiguration.enabled
+    currentConfiguration.expressionsToEvaluate = defaultConfiguration.expressionsToEvaluate
+    currentConfiguration.hideExpressionErrors = defaultConfiguration.hideExpressionErrors
+    currentConfiguration.altoStringifyEvaluatedExpressions = defaultConfiguration.altoStringifyEvaluatedExpressions
+    selectAndInspect.onConfigurationChange()
+  })
+  on('expressionsToEvaluateChanged', (value: string) => {
+    currentConfiguration.expressionsToEvaluate = value
+    selectAndInspect.onConfigurationChange()
+  })
+  on('altoStringifyEvaluatedExpressionsChanged', (value: boolean) => {
+    currentConfiguration.altoStringifyEvaluatedExpressions = value
+    selectAndInspect.onConfigurationChange()
+  })
+  on('hideExpressionErrorsChanged', (value: boolean) => {
+    currentConfiguration.hideExpressionErrors = value
+    selectAndInspect.onConfigurationChange()
+  })
+  on('formatStringifiedEvaluatedExpressionsChanged', (value: boolean) => {
+    currentConfiguration.formatStringifiedEvaluatedExpressions = value
+    selectAndInspect.onConfigurationChange()
+  })
 }
 
 function signedLog(...args: unknown[]) {
@@ -117,16 +171,19 @@ function signedLog(...args: unknown[]) {
 }
 function logExpression(expression: string, ...args: unknown[]) {
   console.log(
-      `%c ${expression}`,
+      `%c └──${expression}`,
       'color: #FF7AAC; font-style: italic;',
       ...args,
   )
 }
-function logExpressionError(expression: string, error: unknown) {
+function logExpressionError(expression: string, ...args: unknown[]) {
   console.log(
-      `%c ${expression}`,
-      'color: #FF7AAC; font-style: italic;',
-      `%c ${error}`,
-      'color: #a3120a;',
+      `%c └──${expression} 🚨`,
+      'color: #A3120A; font-style: italic;',
+      ...args,
   )
+}
+
+function stringifyError(error: unknown) {
+  return error instanceof Error ? error.message : `${error}`
 }
