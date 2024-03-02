@@ -47,7 +47,13 @@ function processExpression(
   let errored = false
 
   try {
+    if (expression.includes('[*]') && !expression.startsWith('[*]')) {
+      processWildCardExpression(item, expression, logOptions)
+      return
+    }
+
     value = evaluateExpression(item, expression)
+
     logExpression(expression, value)
   }
   catch (e) {
@@ -64,5 +70,35 @@ function processExpression(
     catch (e) {
       logExpressionError(`${expression} (stringified):`, stringifyError(e))
     }
+  }
+}
+
+// TODO: strong type literals + check recursivity (reactions[*].actions[*]) + give meaningful errors to the user
+
+function processWildCardExpression(
+  item: unknown,
+  expression: string,
+  logOptions: LogOptions,
+) {
+  const parts = expression.split('[*]')
+  const arrayExpression = parts[0]
+  const propertyExpression = parts[1]
+
+  console.log({ arrayExpression, propertyExpression })
+
+  if (!arrayExpression)
+    throw new Error('Array expression is missing (this is a TS-only protection)')
+
+  const array = evaluateExpression(item, arrayExpression)
+  if (!Array.isArray(array)) {
+    logExpressionError(expression, `The expression ${arrayExpression} does not evaluate to an array`)
+    return
+  }
+
+  for (const arrayItem of array) {
+    if (propertyExpression)
+      processExpression(arrayItem, propertyExpression, logOptions)
+    else
+      processItem(arrayItem, logOptions)
   }
 }
