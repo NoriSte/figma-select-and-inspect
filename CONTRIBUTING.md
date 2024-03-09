@@ -1,54 +1,11 @@
 # Contributing
 
-TODO:
-
-## Issues
-
-If you want to raise an issue:
-1. Please check the [README's roadmap](./README.md#roadmap) in advance, chances are we already
-planned to work on what you need
-1. Please check the [README's FAQ](./README.md#faq) in advance, chances are we are aware of your
-needs but we chose not to work on them
-
 ## Features
 
 First of all, open an issue to describe the feature you would like to build. This helps to avoid you
 wasting your time in case something is not needed or we have a different vision about the topic 😊
 
 ## Development
-
-### How the plugin works
-
-If you start from [src/types.ts](./src/types.ts), and [src/main.ts](./src/main.ts) files, you can
-see the plugin is split in two big steps:
-
-1. A **traverser**: it goes through the content of the Figma document looking for all the useful
-elements which influence the generated state machine (for instance: fragments, buttons, etc.). The
-goal is to generate a **Figma-agnostic object descriptor** used later on to generate the state
-machine. The object created by the traverser is logged in the console's devtools.
-
-1. Some **generators**: they generate the state machine's code out of the Figma-agnostic object
-descriptor. The generate machine is a string to be then copy-pasted in your own project, or in the
-XState visualizer. In the future, more generators will be added.
-
-### Tests
-
-At the moment:
-1. The traverser is not tested
-2. The generators are unit tested
-   1. Anyway, only the generated string is checked. At the moment, the string is not used to create
-   a real XState state machine
-
-
-### To do list
-
-Here is an non-exhausting list of things to do on the project, prioritize by importance.
-
-1. Cover more Figma's features (see the main [README](./README.md))
-2. Set up automatic releases
-3. Add documentation for how the supported Figma entities and interactions are then converted to the
-state machine
-
 
 ## Development guide
 
