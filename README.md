@@ -1,6 +1,13 @@
 # Figma Select and Inspect
 
-<!-- ![Plugin's logo reporting "From Figma prototypes to XState’s machine config"](./assets/hero.jpg "Select and Inspect") -->
+
+
+![Plugin's logo reporting a screenshot of the Console](./assets/Plugin%20logo.png "Select and Inspect")
+
+
+![A screenshot of the plugin running in Figma](./assets/Figma%20Community%20screenshot.jpg "Select and Inspect")
+
+
 
 ## Why?
 
