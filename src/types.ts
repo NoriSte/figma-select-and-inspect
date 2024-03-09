@@ -52,3 +52,45 @@ export const uiEventSchema = z.union([
     value: z.boolean(),
   }),
 ])
+
+type ItemsIterationWildcardExpression = `${string}[*]`
+type PropertiesIterationWildcardExpression = `${string}[*].${string}`
+export type IterationWildcardExpression = ItemsIterationWildcardExpression | PropertiesIterationWildcardExpression
+
+export function isIterationWildcardExpression(expression: unknown): expression is IterationWildcardExpression {
+  if (typeof expression !== 'string')
+    return false
+
+  if (!expression.includes('[*]'))
+    return false
+
+  if (expression.startsWith('[*]'))
+    return false
+
+  if (expression.endsWith('[*]'))
+    return true
+
+  if (!expression.includes('[*].'))
+    return false
+
+  if (expression.endsWith('[*].'))
+    return false
+
+  return true
+}
+
+export function getIterationWildcardExpressionError(expression: unknown) {
+  if (typeof expression !== 'string')
+    return 'notAString'
+
+  if (!expression.includes('[*]'))
+    return 'notIncludes[*]'
+
+  if (expression.startsWith('[*]'))
+    return 'startsWith[*]'
+
+  if (expression.endsWith('[*].'))
+    return 'endsWith[*].'
+
+  return 'noError'
+}

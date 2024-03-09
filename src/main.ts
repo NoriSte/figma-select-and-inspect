@@ -21,7 +21,7 @@ export default function main() {
   signedLog('Load configuration')
 
   loadSettingsAsync(defaultConfiguration, settingsKey).then((configuration) => {
-    logExpression('Configuration loaded')
+    logExpression('└── ', 'Configuration loaded')
 
     // console.log(configuration)
     const selectAndInspect = createSelectAndInspect({

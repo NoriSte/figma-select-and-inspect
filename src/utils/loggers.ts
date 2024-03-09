@@ -5,9 +5,9 @@ export function signedLog(...args: unknown[]) {
       ...args,
   )
 }
-export function logExpression(expression: string, ...args: unknown[]) {
+export function logExpression(prefix: string, expression: string, ...args: unknown[]) {
   console.log(
-      `%c └── ${expression}`,
+      `%c ${prefix}${expression}`,
       'color: #FF7AAC; font-style: italic;',
       ...args,
   )

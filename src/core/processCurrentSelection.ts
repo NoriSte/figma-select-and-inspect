@@ -1,6 +1,6 @@
 import { logExpression, logExpressionError, logStringifiedExpression } from '../utils/loggers'
 import { stringifiedValueIsTheSame, stringifyError } from '../utils/generic'
-import type { LogOptions } from '../types'
+import { type IterationWildcardExpression, type LogOptions, getIterationWildcardExpressionError, isIterationWildcardExpression } from '../types'
 
 export function processCurrentSelection(selection: ReadonlyArray<SceneNode>, configuration: LogOptions) {
   processItems(
@@ -32,11 +32,12 @@ function processItem(item: unknown, logOptions: LogOptions) {
     const trimmedExpression = expression.trim()
     if (expression === '')
       continue
-    processExpression(item, trimmedExpression, logOptions)
+    processExpression('', item, trimmedExpression, logOptions)
   }
 }
 
 function processExpression(
+  prefix: string,
   item: unknown,
   expression: string,
   logOptions: LogOptions,
@@ -47,14 +48,29 @@ function processExpression(
   let errored = false
 
   try {
-    if (expression.includes('[*]') && !expression.startsWith('[*]')) {
-      processWildCardExpression(item, expression, logOptions)
+    if (isIterationWildcardExpression(expression)) {
+      processWildCardExpression('└── ', item, expression, logOptions)
       return
+    }
+
+    const iterationWildcardExpressionError = getIterationWildcardExpressionError(expression)
+    if (iterationWildcardExpressionError !== 'noError') {
+      switch (iterationWildcardExpressionError) {
+        case 'startsWith[*]':
+          logExpressionError(expression, '`[*]` cannot be at the start of the expression, try something like `children[*]` instead')
+          logExpressionError(`${expression} skipped`)
+          return
+
+        case 'endsWith[*].':
+          logExpressionError(expression, '`[*].` cannot be at the end of the expression, try something like `children[*].name` instead')
+          logExpressionError(`${expression} skipped`)
+          return
+      }
     }
 
     value = evaluateExpression(item, expression)
 
-    logExpression(expression, value)
+    logExpression('└── ', expression, value)
   }
   catch (e) {
     errored = true
@@ -76,28 +92,30 @@ function processExpression(
 // TODO: strong type literals + check recursivity (reactions[*].actions[*]) + give meaningful errors to the user
 
 function processWildCardExpression(
+  prefix: string,
   item: unknown,
-  expression: string,
+  expression: IterationWildcardExpression,
   logOptions: LogOptions,
 ) {
   const parts = expression.split('[*]')
   const arrayExpression = parts[0]
   const propertyExpression = parts[1]
 
-  console.log({ arrayExpression, propertyExpression })
-
   if (!arrayExpression)
     throw new Error('Array expression is missing (this is a TS-only protection)')
 
-  const array = evaluateExpression(item, arrayExpression)
-  if (!Array.isArray(array)) {
-    logExpressionError(expression, `The expression ${arrayExpression} does not evaluate to an array`)
+  const maybeArray = evaluateExpression(item, arrayExpression)
+  if (!Array.isArray(maybeArray)) {
+    if (!logOptions.hideExpressionErrors)
+      logExpressionError(expression, `The expression ${arrayExpression} does not evaluate to an array`)
     return
   }
 
-  for (const arrayItem of array) {
+  for (let i = 0, n = maybeArray.length; i < n; i++) {
+    console.log({ arrayExpression, propertyExpression, array: maybeArray, i, n })
+    const arrayItem = maybeArray[i]
     if (propertyExpression)
-      processExpression(arrayItem, propertyExpression, logOptions)
+      processExpression(`└── ${arrayExpression}[${i}]`, arrayItem, propertyExpression, logOptions)
     else
       processItem(arrayItem, logOptions)
   }
