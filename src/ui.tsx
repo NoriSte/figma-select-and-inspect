@@ -1,91 +1,129 @@
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks'
-import { copyToClipboard } from 'figx'
-
-import type {
-  EventHandler,
-} from '@create-figma-plugin/ui'
+import { emit, on } from '@create-figma-plugin/utilities'
 import {
-  Banner,
   Button,
-  Checkbox,
-  Code,
+  Columns,
   Container,
-  IconWarning32,
-  SearchTextbox,
+  Divider,
+  Link,
+  MiddleAlign,
   Stack,
   Text,
-  Toggle,
+  VerticalSpace,
   render,
 } from '@create-figma-plugin/ui'
-import { emit } from '@create-figma-plugin/utilities'
-import type { JSX } from 'preact/jsx-runtime'
-import type { UiOptions } from './types'
+
+import { useReducer, useRef } from 'preact/hooks'
+import { type UiEvent, logOptionsSchema, serverEventSchema } from './types'
+
+import {
+  EnabledDisabled,
+  ExpressionsToEvaluate,
+  FormatStringifiedEvaluatedExpressions,
+  HideExpressionErrors,
+  StringifyEvaluatedExpressions,
+} from './components/fields'
 
 /**
  * The UI entry point rendered by create-figma-plugin
  */
-function UI({ uiOptions }: { uiOptions: UiOptions }) {
-  return (
-    <Container space="medium">
-      <EnabledDisabled
-        defaultValue={uiOptions.enabled}
-        onChange={value =>
-          emit('enabledChanged', value)}
-      />
-      <ExpressionsToEvaluate
-        defaultValue={uiOptions.expressionsToEvaluate}
-        onChange={value =>
-          emit('expressionsToEvaluateChanged', value)}
-      />
+function UI({ configuration }: { configuration: unknown }) {
+  const [renderKey, forceRender] = useReducer(s => s + 1, 0)
 
+  const configurationRef = useRef(logOptionsSchema.parse(configuration))
+
+  on('serverEvent', (event: unknown) => {
+    const uiEvent = serverEventSchema.parse(event)
+    configurationRef.current = uiEvent.value
+    forceRender({})
+  })
+
+  return (
+
+    <Container space="small" key={renderKey}>
+      <VerticalSpace space="medium" />
+      <Stack space="medium">
+        <Columns space="extraLarge">
+          <div>
+            <Text>
+              Please open the devtools' console
+              <br />
+              <i>
+                (Plugins
+                {' '}
+                {'>'}
+                {' '}
+                Development
+                {' '}
+                {'>'}
+                {' '}
+                Show/Hide console)
+              </i>
+            </Text>
+          </div>
+          <div>
+            <MiddleAlign>
+              <EnabledDisabled
+                defaultValue={configurationRef.current.enabled}
+                onChange={(value) => {
+                  const event: UiEvent = { type: 'enabledChanged', value }
+                  emit('uiEvent', event)
+                }}
+              />
+
+            </MiddleAlign>
+          </div>
+        </Columns>
+        <Divider />
+        <Text><b>Evaluated expressions</b></Text>
+        <ExpressionsToEvaluate
+          defaultValue={configurationRef.current.expressionsToEvaluate}
+          onChange={(value) => {
+            const event: UiEvent = { type: 'expressionsToEvaluateChanged', value }
+            emit('uiEvent', event)
+          }}
+        />
+        <Columns space="extraLarge">
+          <HideExpressionErrors
+            defaultValue={configurationRef.current.hideExpressionErrors}
+            onChange={(value) => {
+              const event: UiEvent = { type: 'hideExpressionErrorsChanged', value }
+              emit('uiEvent', event)
+            }}
+          />
+          <StringifyEvaluatedExpressions
+            defaultValue={configurationRef.current.stringifyEvaluatedExpressions}
+            onChange={(value) => {
+              const event: UiEvent = { type: 'stringifyEvaluatedExpressionsChanged', value }
+              emit('uiEvent', event)
+            }}
+          />
+          <FormatStringifiedEvaluatedExpressions
+            defaultValue={configurationRef.current.formatStringifiedEvaluatedExpressions}
+            onChange={(value) => {
+              const event: UiEvent = { type: 'formatStringifiedEvaluatedExpressionsChanged', value }
+              emit('uiEvent', event)
+            }}
+          />
+        </Columns>
+
+        <Button
+          onClick={() => {
+            const event: UiEvent = { type: 'resetToDefaultLogOptions' }
+            emit('uiEvent', event)
+          }}
+
+          secondary
+        >
+          Reset to defaults
+        </Button>
+        <Text>
+          By
+          {' '}
+          <Link href="https://noriste.dev/?source=figma-select-and-inspect" target="_blank">NoriSte</Link>
+        </Text>
+      </Stack>
     </Container>
+
   )
 }
-
-function EnabledDisabled({ defaultValue, onChange }: { defaultValue: boolean; onChange: (newValue: boolean) => void }) {
-  const [value, setValue] = useState(defaultValue)
-  function handleChange(event: JSX.TargetedEvent<HTMLInputElement>) {
-    setValue(event.currentTarget.checked)
-    onChange(event.currentTarget.checked)
-  }
-  return (
-    <Toggle onChange={handleChange} value={value}>
-      <Text>Enabled</Text>
-    </Toggle>
-  )
-}
-
-function ExpressionsToEvaluate({ defaultValue, onChange }: { defaultValue: string; onChange: (newValue: string) => void }) {
-  const [value, setValue] = useState(defaultValue)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(-1)
-  function handleValueInput(newValue: string) {
-    setValue(newValue)
-  }
-  const onKeyDown = useCallback((event: EventHandler.onKeyDown<HTMLInputElement>) => {
-    // @ts-expect-error TODO:
-    if (event?.code !== 'Enter')
-      return
-    // TODO: Missing ref to get current value
-    if (timeoutRef.current !== -1) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = -1
-    }
-    onChange(value)
-  }, [])
-  useEffect(() => {
-    timeoutRef.current = setTimeout(() => onChange(value), 300)
-    return () => {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = -1
-    }
-  }, [value])
-  return (
-    <>
-      <Text>Comma separated</Text>
-      <SearchTextbox onValueInput={handleValueInput} value={value} onKeyDown={onKeyDown} />
-
-    </>
-  )
-}
-
 export default render(UI)
