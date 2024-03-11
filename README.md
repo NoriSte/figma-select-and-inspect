@@ -9,6 +9,10 @@
 
 
 
+https://github.com/NoriSte/figma-select-and-inspect/assets/173663/e1df071b-3f24-40ad-9f33-f22809bfbdb1
+
+
+
 ## Why?
 
 If you ever implemented a Figma plugin, you know how slow the process of inspecting specific properties (among the hundreds available) and values in a Figma file is.
