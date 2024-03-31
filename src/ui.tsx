@@ -17,6 +17,7 @@ import { type UiEvent, logOptionsSchema, serverEventSchema } from './types'
 
 import {
   EnabledDisabled,
+  ExecuteFunctionsAndAwaitPromises,
   ExpressionsToEvaluate,
   FormatStringifiedEvaluatedExpressions,
   HideExpressionErrors,
@@ -97,10 +98,19 @@ function UI({ configuration }: { configuration: unknown }) {
               emit('uiEvent', event)
             }}
           />
+        </Columns>
+        <Columns space="extraLarge">
           <FormatStringifiedEvaluatedExpressions
             defaultValue={configurationRef.current.formatStringifiedEvaluatedExpressions}
             onChange={(value) => {
               const event: UiEvent = { type: 'formatStringifiedEvaluatedExpressionsChanged', value }
+              emit('uiEvent', event)
+            }}
+          />
+          <ExecuteFunctionsAndAwaitPromises
+            defaultValue={configurationRef.current.executeFunctionsAndAwaitPromises}
+            onChange={(value) => {
+              const event: UiEvent = { type: 'executeFunctionsAndAwaitPromisesChanged', value }
               emit('uiEvent', event)
             }}
           />

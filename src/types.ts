@@ -25,6 +25,7 @@ export const logOptionsSchema = z.object({
   expressionsToEvaluate: z.string(),
   hideExpressionErrors: z.boolean(),
   stringifyEvaluatedExpressions: z.boolean(),
+  executeFunctionsAndAwaitPromises: z.boolean(),
   formatStringifiedEvaluatedExpressions: z.boolean(),
 })
 
@@ -38,6 +39,10 @@ export const uiEventSchema = z.union([
     value: z.boolean(),
   }),
   z.object({
+    type: z.literal('hideExpressionErrorsChanged'),
+    value: z.boolean(),
+  }),
+  z.object({
     type: z.literal('expressionsToEvaluateChanged'),
     value: z.string(),
   }),
@@ -46,11 +51,11 @@ export const uiEventSchema = z.union([
     value: z.boolean(),
   }),
   z.object({
-    type: z.literal('formatStringifiedEvaluatedExpressionsChanged'),
+    type: z.literal('executeFunctionsAndAwaitPromisesChanged'),
     value: z.boolean(),
   }),
   z.object({
-    type: z.literal('hideExpressionErrorsChanged'),
+    type: z.literal('formatStringifiedEvaluatedExpressionsChanged'),
     value: z.boolean(),
   }),
 ])

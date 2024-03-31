@@ -80,3 +80,15 @@ export function FormatStringifiedEvaluatedExpressions({ defaultValue, onChange }
     </Checkbox>
   )
 }
+
+export function ExecuteFunctionsAndAwaitPromises({ defaultValue, onChange }: { defaultValue: boolean; onChange: (newValue: boolean) => void }) {
+  const [value, setValue] = useState(defaultValue)
+
+  useOnChange(value, onChange)
+
+  return (
+    <Checkbox onValueChange={setValue} value={value}>
+      <Text>Execute functions and await promises</Text>
+    </Checkbox>
+  )
+}

@@ -22,6 +22,8 @@ This plugin aims to solve this problem by making logging as easy as possible!
 
 1. Select one or more Figma elements to get them logged in the Console
 2. Add expressions to be evaluated on the selected Figma elements (`name,id,reactions[0].actions` results in each expression to be evaluated and logged in the Console)
+   - And if the value is a function, invoke it
+      - And if the returned value is a promise, await it
 3. Stringy and format the result for better readability
 4. Preferences are stored locally
 

@@ -24,3 +24,7 @@ export function isEmptyArray(value: unknown) {
     Array.isArray(value) && value.length === 0
   )
 }
+
+export function isPromise(obj: unknown) {
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && 'then' in obj && typeof obj.then === 'function'
+}

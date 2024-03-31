@@ -1,29 +1,43 @@
+import { optional } from 'zod'
 import { logExpression, logExpressionError, logStringifiedExpression } from '../utils/loggers'
-import { stringifiedValueIsTheSame, stringifyError } from '../utils/generic'
+import { isPromise, stringifiedValueIsTheSame, stringifyError } from '../utils/generic'
 import type { LogOptions } from '../types'
 
-export function processCurrentSelection(selection: ReadonlyArray<SceneNode>, configuration: LogOptions) {
-  processItems(
+export async function processCurrentSelection(selection: ReadonlyArray<SceneNode>, configuration: LogOptions) {
+  await processItems(
     selection,
     configuration,
   )
 }
 
-function processItems(items: readonly unknown[], logOptions: LogOptions) {
+async function processItems(items: readonly unknown[], logOptions: LogOptions) {
   for (const item of items) {
-    processItem(
+    await processItem(
       item,
       logOptions,
     )
   }
 }
 
-function evaluateExpression(item: unknown, expression: string) {
+function evaluateExpression(item: unknown, expression: string, options: { invokeFunctions: boolean }) {
+  const { invokeFunctions } = options
   // eslint-disable-next-line no-new-func
-  return new Function('obj', `return obj.${expression}`)(item)
+  return new Function('obj', `
+  function evaluator(obj) {
+    let value = obj.${expression}
+
+    if(typeof value === 'function' && ${invokeFunctions}) {
+      return obj.${expression}()
+    }
+
+    return value
+  }
+
+  return evaluator(obj)
+`)(item)
 }
 
-function processItem(item: unknown, logOptions: LogOptions) {
+async function processItem(item: unknown, logOptions: LogOptions) {
   console.log(item)
 
   const expressions = logOptions.expressionsToEvaluate.split(',')
@@ -32,23 +46,34 @@ function processItem(item: unknown, logOptions: LogOptions) {
     const trimmedExpression = expression.trim()
     if (expression === '')
       continue
-    processExpression(item, trimmedExpression, logOptions)
+    await processExpression(item, trimmedExpression, logOptions)
   }
 }
 
-function processExpression(
+async function processExpression(
   item: unknown,
   expression: string,
   logOptions: LogOptions,
 ) {
-  const { stringifyEvaluatedExpressions, hideExpressionErrors, formatStringifiedEvaluatedExpressions } = logOptions
+  const { stringifyEvaluatedExpressions, hideExpressionErrors, formatStringifiedEvaluatedExpressions, executeFunctionsAndAwaitPromises } = logOptions
   let value
   let stringifiedValue = ''
   let errored = false
 
   try {
-    value = evaluateExpression(item, expression)
-    logExpression(expression, value)
+    value = evaluateExpression(item, expression, { invokeFunctions: executeFunctionsAndAwaitPromises })
+    if (executeFunctionsAndAwaitPromises) {
+      if (isPromise(value)) {
+        const resolvedValue = await value
+        logExpression(expression, resolvedValue)
+      }
+      else {
+        logExpression(expression, value)
+      }
+    }
+    else {
+      logExpression(expression, value)
+    }
   }
   catch (e) {
     errored = true
