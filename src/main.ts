@@ -8,6 +8,7 @@ const defaultConfiguration: LogOptions = {
   expressionsToEvaluate: '',
   hideExpressionErrors: false,
   stringifyEvaluatedExpressions: false,
+  executeFunctionsAndAwaitPromises: false,
   formatStringifiedEvaluatedExpressions: false,
 }
 

@@ -4,7 +4,7 @@ import type { CreateFigmaPluginEmit, CreateFigmaPluginShowUI, FigmaPluginApi, Lo
 import { createAreReferencesChanged } from '../utils/areReferencesChanged'
 import { processCurrentSelection } from './processCurrentSelection'
 
-const uiOptions = { width: 480, height: 260 } as const
+const uiOptions = { width: 480, height: 290 } as const
 
 interface Params {
   configuration: LogOptions
@@ -69,6 +69,11 @@ export function createSelectAndInspect(params: Params) {
         break
       }
 
+      case 'hideExpressionErrorsChanged':
+        currentConfiguration.hideExpressionErrors = event.value
+        logChange('Hide evaluated expressions errors changed')
+        break
+
       case 'expressionsToEvaluateChanged':
         currentConfiguration.expressionsToEvaluate = event.value
         logChange('Expressions to evaluate changed')
@@ -79,9 +84,9 @@ export function createSelectAndInspect(params: Params) {
         logChange('Stringify evaluated expressions changed')
         break
 
-      case 'hideExpressionErrorsChanged':
-        currentConfiguration.hideExpressionErrors = event.value
-        logChange('Hide evaluated expressions errors changed')
+      case 'executeFunctionsAndAwaitPromisesChanged':
+        currentConfiguration.executeFunctionsAndAwaitPromises = event.value
+        logChange('Execute functions and await promises changed')
         break
 
       case 'formatStringifiedEvaluatedExpressionsChanged':
