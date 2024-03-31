@@ -1,4 +1,3 @@
-import { optional } from 'zod'
 import { logExpression, logExpressionError, logStringifiedExpression } from '../utils/loggers'
 import { isPromise, stringifiedValueIsTheSame, stringifyError } from '../utils/generic'
 import type { LogOptions } from '../types'
